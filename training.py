@@ -3,10 +3,11 @@ import random
 import math
 import matplotlib.pyplot as plt
 class Training():
-	def __init__(self):
+	def __init__(self,training_file,test_file):
 		self.train_data=None
 		self.label=None
-		self.train_data,self.label=self.read_from_file('dataset/dataset1-a8a-training.txt')
+		self.train_data,self.train_label=self.read_from_file(training_file)
+		self.test_data,self.test_label=self.read_from_file(test_file)
 	def get_example_num(self):
 		return len(self.train_data)
 	def read_from_file(self,filename):
@@ -21,7 +22,7 @@ class Training():
 		data=np.array(data)
 		label=np.array(label)
 		return data,label
-	def pegasos_hinge_loss(self,data,label,lam,T,ts):
+	def pegasos_hinge_loss(self,data,label,lam,ts,T):
 		max_row=len(data)-1
 		w=np.zeros(len(data[0]))
 		index_t=0
@@ -38,7 +39,7 @@ class Training():
 				ws.append(w)
 				index_t+=1
 		return ws
-	def pegasos_log_loss(self,data,label,lam,T,ts):
+	def pegasos_log_loss(self,data,label,lam,ts,T):
 		max_row=len(data)-1
 		w=np.zeros(len(data[0]))
 		index_t=0
@@ -49,7 +50,6 @@ class Training():
 			y=label[rand]
 			w=(1-1/t)*w+(1/(lam*t))*(y/(1+math.e**(y*np.inner(w,x))))*x
 			if t==ts[index_t]:
-				print(t)
 				ws.append(w)
 				index_t+=1
 		return ws
@@ -62,20 +62,39 @@ class Training():
 		return wrong/len(res)
 	def test_error_s(self,ws):
 		result=[]
-		test,label=self.read_from_file('dataset/dataset1-a8a-testing.txt')
 		for w in ws:
-			test_err=self.test_error(w,test,label)
+			test_err=self.test_error(w,self.test_data,self.test_label)
 			result.append(test_err)
 		return result
-	def to_img(self,xs,ys):
+	def to_img(self,ys,title):
+		xs=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
 		plt.plot(xs,ys)
+		plt.title(title)
+		plt.ylabel('test error')
+		plt.xlabel('number of iterations')
 		plt.axis([0.1,1,0,1])
-		plt.show()
+		plt.xticks(xs,[r'$0.1T$',r'$0.2T$',r'$0.3T$',r'$0.4T$',r'$0.5T$',r'$0.6T$',r'$0.7T$',r'$0.8T$',r'$0.9T$',r'$1T$'])
+		plt.savefig(title+".png")
+		plt.close()
+	def get_ts(self,T):
+		result=[]
+		for i in range(1,11,1):
+			result.append(int(T*i*0.1))
+		return result
+	def start(self,lam,title):
+		T=5*len(self.train_data)
+		ts=self.get_ts(T)
+		test_error=self.test_error_s(self.pegasos_hinge_loss(self.train_data,self.train_label,lam,ts,T))
+		name=title+" hinge loss"
+		self.to_img(test_error,name)
+		print(name+"\t",test_error)
+		test_error=self.test_error_s(self.pegasos_log_loss(self.train_data,self.train_label,lam,ts,T))
+		name=title+" log loss"
+		self.to_img(test_error,name)
+		print(name+"\t",test_error)
 if __name__=='__main__':
-	filepath='dataset/dataset1-a8a-training.txt'
-	t=Training()
-	T=5*t.get_example_num()
-	ts=[0.1*T,0.2*T,0.3*T,0.4*T,0.5*T,0.6*T,0.7*T,0.8*T,0.9*T,T]
-	ws=t.pegasos_hinge_loss(t.train_data,t.label,1e-4,T,ts)
-	errors=t.test_error_s(ws)
-	t.to_img([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1],errors)
+	t=Training('dataset/dataset1-a8a-training.txt','dataset/dataset1-a8a-testing.txt')
+	t.start(1e-4,"dataset 1")
+	t=Training('dataset/dataset1-a9a-training.txt','dataset/dataset1-a9a-testing.txt')
+	t.start(5e-5,"dataset 2")
+
