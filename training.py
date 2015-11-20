@@ -174,12 +174,15 @@ class Training():
             self.pegasos_hinge_loss(self.train_data, self.train_label, lam, ts, T))
         name = title+" hinge loss"
         self.to_img(test_error, name)
-        print(name+"\t", test_error)
+        print(name, 'test errors:')
+        print(' '.join('%0.4f'%x for x in test_error))
         test_error = self.test_error_s(
             self.pegasos_log_loss(self.train_data, self.train_label, lam, ts, T))
         name = title+" log loss"
         self.to_img(test_error, name)
-        print(name+"\t", test_error)
+        print(name, 'test errors:')
+        print(' '.join('%0.4f'%x for x in test_error))
+
 if __name__ == '__main__':
     t = Training(
         'dataset/dataset1-a8a-training.txt', 'dataset/dataset1-a8a-testing.txt')
